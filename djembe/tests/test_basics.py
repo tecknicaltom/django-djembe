@@ -3,6 +3,7 @@ from django.test import TestCase
 
 from djembe.models import Identity
 from djembe.tests import data
+from djembe.exceptions import UnencryptableRecipients
 
 from M2Crypto import BIO
 from M2Crypto import SMIME
@@ -208,3 +209,25 @@ class EncryptionTest(TestCase):
         )
         sender = backend.get_sender_identity(sender_address)
         self.assertTrue(sender is None)
+
+    def testDisabledPlaintextFallback(self):
+        subject = 'Multiple recipients'
+        body = "Some recipients have Identities"
+        sender = "sender@example.com"
+        recipients = ["recipient1@example.com", "recipient3@example.com"]
+
+        with self.settings(DJEMBE_PLAINTEXT_FALLBACK=True):
+            messages_sent = mail.send_mail(subject, body, sender, recipients, fail_silently=True)
+            self.assertEqual(2, messages_sent)
+
+        with self.settings(DJEMBE_PLAINTEXT_FALLBACK=False):
+            messages_sent = mail.send_mail(subject, body, sender, recipients, fail_silently=True)
+            self.assertEqual(1, messages_sent)
+
+            try:
+                mail.send_mail(subject, body, sender, recipients, fail_silently=False)
+                self.fail('Unencryptable recipients with DJEMBE_PLAINTEXT_FALLBACK=False ' +
+                    'and fail_silently=False should have raised an exception')
+            except UnencryptableRecipients as e:
+                self.assertEqual(e.encrypting_recipients, set(['recipient1@example.com']))
+                self.assertEqual(e.plaintext_recipients, set(['recipient3@example.com']))

@@ -79,6 +79,12 @@ Configuration
 
    I'd recommend you try the default and fall back to 3DES if necessary.
 
+#. By default, when an intended recipient does not have a valid Identity, they
+   will be emailed in plaintext. This behavior can be changed by setting
+   ``DJEMBE_PLAINTEXT_FALLBACK`` to False. When False, plaintext emails will not be
+   sent. Additionally, if ``fail_silently`` is False, a
+   ``djembe.exceptions.UnencryptableRecipients`` exception will be raised.
+
 #. Use the Django admin to add recipients that should receive encrypted mail.
 
    The simplest case is an Identity with a certificate. Any mail sent to that
