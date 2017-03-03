@@ -156,18 +156,6 @@ class EncryptingBackendMixin(object):
             message = self.sign(sender_identity, message)
 
         sent = 0
-        if plaintext_recipients:
-            try:
-                self.deliver(
-                    sender_address,
-                    plaintext_recipients,
-                    message.as_string()
-                )
-                sent += 1
-            except:
-                if self.fail_silently is False:
-                    raise
-
         if encrypting_identities:
             try:
                 encrypted_message = self.encrypt(
@@ -180,6 +168,18 @@ class EncryptingBackendMixin(object):
                     sender_address,
                     encrypting_recipients,
                     encrypted_message.as_string()
+                )
+                sent += 1
+            except:
+                if self.fail_silently is False:
+                    raise
+
+        if plaintext_recipients:
+            try:
+                self.deliver(
+                    sender_address,
+                    plaintext_recipients,
+                    message.as_string()
                 )
                 sent += 1
             except:
