@@ -14,6 +14,7 @@ from M2Crypto import SMIME
 from M2Crypto import X509
 
 from djembe.models import Identity
+from djembe.exceptions import UnencryptableRecipients
 
 
 class EncryptingBackendMixin(object):
@@ -156,18 +157,6 @@ class EncryptingBackendMixin(object):
             message = self.sign(sender_identity, message)
 
         sent = 0
-        if plaintext_recipients:
-            try:
-                self.deliver(
-                    sender_address,
-                    plaintext_recipients,
-                    message.as_string()
-                )
-                sent += 1
-            except:
-                if self.fail_silently is False:
-                    raise
-
         if encrypting_identities:
             try:
                 encrypted_message = self.encrypt(
@@ -184,12 +173,33 @@ class EncryptingBackendMixin(object):
                 sent += 1
             except:
                 if self.fail_silently is False:
-                    if not sent:
-                        raise
-                    else:
-                        exc_class, exc, tb = sys.exc_info()
-                        new_exc = exc_class("Only partial success (messages sent before error: %s)" % sent)
-                        raise new_exc.__class__, new_exc, tb
+                    raise
+
+        if plaintext_recipients:
+            if getattr(settings, 'DJEMBE_PLAINTEXT_FALLBACK', True):
+                try:
+                    self.deliver(
+                        sender_address,
+                        plaintext_recipients,
+                        message.as_string()
+                    )
+                    sent += 1
+                except:
+                    if self.fail_silently is False:
+                        if not sent:
+                            raise
+                        else:
+                            exc_class, exc, tb = sys.exc_info()
+                            new_exc = exc_class("Only partial success (messages sent before error: %s)" % sent)
+                            raise new_exc.__class__, new_exc, tb
+            else:
+                # disabled plaintext fallback
+                if self.fail_silently is False:
+                    raise UnencryptableRecipients(
+                        encrypting_identities,
+                        encrypting_recipients,
+                        plaintext_recipients)
+
 
         return sent
 
