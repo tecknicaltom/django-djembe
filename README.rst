@@ -92,6 +92,10 @@ Configuration
    different certificates. This is how you encrypt mail to an alias or mailing
    list.
 
+#. By default, the not_before and not_after fields of an Identity's certificate
+   are not checked prior to using it to encrypt email. This can be changed by
+   setting the setting ``DJEMBE_VALIDATE_DATES`` to True.
+
 Contributing
 ------------
 
