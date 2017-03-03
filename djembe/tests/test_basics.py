@@ -1,4 +1,5 @@
 from django.core import mail
+from django.core.mail import EmailMessage
 from django.test import TestCase
 
 from djembe.models import Identity
@@ -208,3 +209,47 @@ class EncryptionTest(TestCase):
         )
         sender = backend.get_sender_identity(sender_address)
         self.assertTrue(sender is None)
+
+    def testInvalidDateCert(self):
+        from datetime import date, timedelta
+
+        recipient_valid = 'valid@example.com'
+        recipient_expired = 'expired@example.com'
+        recipient_not_yet_valid = 'notyetvalid@example.com'
+        today = date.today()
+        backend = mail.get_connection()
+
+        Identity.objects.create(
+            certificate=data.RECIPIENT1_CERTIFICATE,
+            address=recipient_valid,
+            not_before = today - timedelta(days=2),
+            not_after = today + timedelta(days=2),
+        )
+        Identity.objects.create(
+            certificate=data.RECIPIENT1_CERTIFICATE,
+            address=recipient_expired,
+            not_before = today - timedelta(days=4),
+            not_after = today - timedelta(days=2),
+        )
+        Identity.objects.create(
+            certificate=data.RECIPIENT1_CERTIFICATE,
+            address=recipient_not_yet_valid,
+            not_before = today + timedelta(days=2),
+            not_after = today + timedelta(days=4),
+        )
+
+        email_message = EmailMessage(
+            'subject',
+            'body',
+            'sender@example.com',
+            [recipient_valid, recipient_expired, recipient_not_yet_valid],
+        )
+
+        with self.settings(DJEMBE_VALIDATE_DATES=False):
+            encrypting_identities, encrypting_recipients, plaintext_recipients = backend.analyze_recipients(email_message)
+            self.assertEqual(encrypting_recipients, set([recipient_valid, recipient_expired, recipient_not_yet_valid]))
+
+        with self.settings(DJEMBE_VALIDATE_DATES=True):
+            encrypting_identities, encrypting_recipients, plaintext_recipients = backend.analyze_recipients(email_message)
+            self.assertEqual(encrypting_recipients, set([recipient_valid]))
+            self.assertEqual(plaintext_recipients, set([recipient_expired, recipient_not_yet_valid]))
