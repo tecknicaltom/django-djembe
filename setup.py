@@ -22,9 +22,8 @@ setup(
     description=djembe.__doc__,
     long_description=long_description,
     install_requires=[
-        'Django>=1.6',
+        'Django>=1.7',
         'M2Crypto',
-        'South',
     ],
     name='django-djembe',
     packages=[
@@ -41,7 +40,6 @@ setup(
     tests_require=[
         'Django>=1.6',
         'M2Crypto',
-        'South',
         'coverage',
         'django_coverage'
     ],
