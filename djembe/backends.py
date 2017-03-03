@@ -2,6 +2,7 @@ import email
 import logging
 import smtplib
 import sys
+from datetime import date
 
 from django.conf import settings
 from django.core.mail.backends import base
@@ -44,6 +45,12 @@ class EncryptingBackendMixin(object):
             ])
 
             encrypting_identities = Identity.objects.filter(address__in=recipients)
+            if getattr(settings, 'DJEMBE_VALIDATE_DATES', False):
+                today = date.today()
+                encrypting_identities = encrypting_identities.filter(
+                    not_before__lte=today,
+                    not_after__gte=today,
+                    )
             encrypting_recipients = set([r.address for r in encrypting_identities])
             plaintext_recipients = recipients - encrypting_recipients
 
