@@ -24,13 +24,11 @@ class Identity(models.Model):
 
     not_before = models.DateField(
         blank=True,
-        null=True,
         help_text=_('If left blank, it will be extracted from the X.509 certificate.')
     )
 
     not_after = models.DateField(
         blank=True,
-        null=True,
         help_text=_('If left blank, it will be extracted from the X.509 certificate.')
     )
 
