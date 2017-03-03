@@ -22,6 +22,18 @@ class Identity(models.Model):
         help_text=_('If mail <em>from</em> this identity should be signed, put a PEM-encoded private key here. Make sure it does not require a passphrase.')
     )
 
+    not_before = models.DateField(
+        blank=True,
+        null=True,
+        help_text=_('If left blank, it will be extracted from the X.509 certificate.')
+    )
+
+    not_after = models.DateField(
+        blank=True,
+        null=True,
+        help_text=_('If left blank, it will be extracted from the X.509 certificate.')
+    )
+
     class Meta:
         ordering = ['address']
         verbose_name_plural = _('Identities')
